@@ -46,6 +46,8 @@
 # 09-08-2015 - 1.0.1 - ph03n1x
 #   * rewrote entire code for better detection. Only works with b3 1.10 and later
 #   * Credit given to NPR|pyr0 because I used his idea
+# 09-09-2015 - 1.0.2 - ph03n1x
+#   * Added backward compatibility to v1.9.2
 
 
 __author__ = 'NRP|pyr0, ph03n1x'
@@ -57,6 +59,7 @@ import b3.plugin
 
 
 class NamechangersPlugin(b3.plugin.Plugin):
+    _bc = False  # Informs event functioning that we are to use old dispatch system. So that we don't have double events
     _storedClients = {}
     _default_messages = {'kick': 'Player $name Kicked for too many namechanges (GUID: $guid)',
                          'tempban': 'Player $name Temp Banned for too many namechanges (GUID: $guid)',
@@ -64,11 +67,19 @@ class NamechangersPlugin(b3.plugin.Plugin):
                          }
 
     def onStartup(self):
-        # Register events using new dispatch system
-        self.registerEvent('EVT_CLIENT_NAME_CHANGE', self.nameChangeOccurred)
-        self.registerEvent('EVT_CLIENT_KICK', self.onPenalty)
-        self.registerEvent('EVT_CLIENT_BAN_TEMP', self.onPenalty)
-        self.registerEvent('EVT_CLIENT_BAN', self.onPenalty)
+        try:
+            # Register events using new dispatch system
+            self.registerEvent('EVT_CLIENT_NAME_CHANGE', self.nameChangeOccurred)
+            self.registerEvent('EVT_CLIENT_KICK', self.onPenalty)
+            self.registerEvent('EVT_CLIENT_BAN_TEMP', self.onPenalty)
+            self.registerEvent('EVT_CLIENT_BAN', self.onPenalty)
+        except:
+            # Keep backwards compatibility
+            self._bc = True
+            self.registerEvent(b3.events.EVT_CLIENT_NAME_CHANGE)
+            self.registerEvent(b3.events.EVT_CLIENT_KICK)
+            self.registerEvent(b3.events.EVT_CLIENT_BAN_TEMP)
+            self.registerEvent(b3.events.EVT_CLIENT_BAN)
 
     def onLoadConfig(self):
         try:
@@ -82,7 +93,7 @@ class NamechangersPlugin(b3.plugin.Plugin):
             self.maxnames = self.config.getint('settings', 'maxnames')
         except:
             self.maxnames = 5
-            self.debug('No Config Value Set. Using Default maxnames: 5.')
+            self.debug('No Config Value Set. Using Default Max Names of 5.')
 
         try:
             self.action = self.config.get('settings', 'action')
@@ -112,6 +123,17 @@ class NamechangersPlugin(b3.plugin.Plugin):
         if self.config.has_section('messages'):
             for (penalty, message) in self.config.items('messages'):
                 self._default_messages[penalty] = message
+
+    ########################### BACKWARD COMPATIBILITY SECTION #####################
+    def onEvent(self, event):
+        if self._bc:
+            if event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
+                self.nameChangeOccurred(event)
+            elif event.type == b3.events.EVT_CLIENT_KICK or \
+                event.type == b3.events.EVT_CLIENT_BAN_TEMP or \
+                event.type == b3.events.EVT_CLIENT_BAN:
+                self.onPenalty(event)
+
 
     ########################### EVENT HANDLING #####################################
     def nameChangeOccurred(self, event):
