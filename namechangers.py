@@ -85,7 +85,9 @@ class NamechangersPlugin(b3.plugin.Plugin):
     def onLoadConfig(self):
         try:
             self.logLocation = self.config.get('settings', 'log_location')
-            if not self.logLocation:
+            if self.logLocation:
+                self.logLocation = b3.getAbsolutePath(self.logLocation)
+            elif not self.logLocation:
                 self.verbose('Log disabled in config')
         except:
             self.logLocation = None
