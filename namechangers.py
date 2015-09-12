@@ -60,8 +60,7 @@ from b3 import functions
 
 
 class NamechangersPlugin(b3.plugin.Plugin):
-    _bc = False  # Informs event functioning that we are to use old dispatch system. So that we don't have double events
-    _storedClients = {}
+    _storedClients = {}  # Stores the clients that have changed names
     _default_messages = {'kick': 'Player $name Kicked for too many namechanges (GUID: $guid)',
                          'tempban': 'Player $name Temp Banned for too many namechanges (GUID: $guid)',
                          'permban': 'Player $name PermBanned for too many namechanges (GUID: $guid)'
@@ -76,7 +75,6 @@ class NamechangersPlugin(b3.plugin.Plugin):
             self.registerEvent('EVT_CLIENT_BAN', self.onPenalty)
         except:
             # Keep backwards compatibility
-            self._bc = True
             self.registerEvent(b3.events.EVT_CLIENT_NAME_CHANGE)
             self.registerEvent(b3.events.EVT_CLIENT_KICK)
             self.registerEvent(b3.events.EVT_CLIENT_BAN_TEMP)
@@ -110,7 +108,7 @@ class NamechangersPlugin(b3.plugin.Plugin):
                 self.duration = functions.time2minutes(self.duration)
                 self.debug('Tempban duration set to %s' % self.duration)
             except:
-                self.duration = '2h'
+                self.duration = functions.time2minutes('2h')
                 self.debug('No Config Value set for tempban_duration, using 2 hours')
 
         try:
@@ -131,13 +129,12 @@ class NamechangersPlugin(b3.plugin.Plugin):
 
     ########################### BACKWARD COMPATIBILITY SECTION #####################
     def onEvent(self, event):
-        if self._bc:
-            if event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
-                self.nameChangeOccurred(event)
-            elif event.type == b3.events.EVT_CLIENT_KICK or \
-                event.type == b3.events.EVT_CLIENT_BAN_TEMP or \
-                event.type == b3.events.EVT_CLIENT_BAN:
-                self.onPenalty(event)
+        if event.type == b3.events.EVT_CLIENT_NAME_CHANGE:
+            self.nameChangeOccurred(event)
+        elif event.type == b3.events.EVT_CLIENT_KICK or \
+            event.type == b3.events.EVT_CLIENT_BAN_TEMP or \
+            event.type == b3.events.EVT_CLIENT_BAN:
+            self.onPenalty(event)
 
 
     ########################### EVENT HANDLING #####################################
