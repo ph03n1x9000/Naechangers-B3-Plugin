@@ -56,6 +56,7 @@ __version__ = '1.0.1'
 import b3
 import b3.events
 import b3.plugin
+from b3 import functions
 
 
 class NamechangersPlugin(b3.plugin.Plugin):
@@ -104,6 +105,8 @@ class NamechangersPlugin(b3.plugin.Plugin):
         if self.action == 'tempban':
             try:
                 self.duration = self.config.get('settings', 'tempban_duration')
+                self.duration = functions.time2minutes(self.duration)
+                self.debug('Tempban duration set to %s' % self.duration)
             except:
                 self.duration = '2h'
                 self.debug('No Config Value set for tempban_duration, using 2 hours')
