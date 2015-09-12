@@ -51,7 +51,7 @@
 
 
 __author__ = 'NRP|pyr0, ph03n1x'
-__version__ = '1.0.1'
+__version__ = '1.0.2'
 
 import b3
 import b3.events
